@@ -28,6 +28,7 @@ def CreatePythonExecEnvironment():
 
 	prologue = """
 import os
+import inspect
 
 # Empty string for output
 g_EmitOutput = ""
@@ -47,7 +48,8 @@ def EmitLn(line):
 def EmitRepl(generic, repl):
 
 	# Remove leading/trailing newlines
-	generic = generic[1:-1]
+	generic = generic.lstrip(os.linesep)
+	generic = generic.rstrip(os.linesep)
 
 	# Split into old value and replacement values
 	r = repl.split(":")
@@ -58,6 +60,20 @@ def EmitRepl(generic, repl):
 	vals = new_vals.split(",")
 	for v in vals:
 		EmitLn(generic.replace(old_val, v))
+
+def EmitFmt(line):
+
+	# Get local variables from calling frame
+	# This is available in CPython but not guaranteed to be available in other Python implementations
+	calling_frame = inspect.currentframe().f_back
+	locals = calling_frame.f_locals
+
+	# Remove leading/trailing newlines
+	line = line.lstrip(os.linesep)
+	line = line.rstrip(os.linesep)
+
+	# Format with the unpacked calling frame local variables
+	EmitStr(line.format(**locals))
 """
 
 	# Compile the prologue and return the environment it creates
